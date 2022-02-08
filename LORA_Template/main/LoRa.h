@@ -4,7 +4,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
-#include <esp_log.h>
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
 
@@ -68,62 +67,39 @@
 #define IRQ_RX_DONE_MASK           0x40
 
 
-class LoRa
-{
- public:
-	LoRa( int mosi, int miso, int clk, int cs, int reset, int dio, int power );
-    
-	int parsePacket(int size);
-	int read();
-	void receive(int size);
-	int handleDataReceived( char *msg );
-	int available();
 
-	void dumpRegisters();
+void loraInit( int mosi, int miso, int clk, int cs, int reset, int dio, int power );
 
-	int beginPacket(int implicitHeader);
-	size_t write(const uint8_t *buffer, size_t size);
-	int endPacket(bool async);
-	int getPacketRssi();
+int loraParsePacket(int size);
+int loraRead();
+void loraReceive(int size);
+int loraHandleDataReceived( char *msg );
+int loraAvailable();
 
-	void explicitHeaderMode();
-	void implicitHeaderMode();
+void loraDumpRegisters();
 
-	void setOCP(uint8_t mA);
-	void setTxPower(int8_t power, int8_t outputPin);
-	void setCRC( bool crc );
-	void setSyncWord(int sw);
+int loraBeginPacket(int implicitHeader);
+size_t loraWrite(const uint8_t *buffer, size_t size);
+int loraEndPacket(bool async);
+int loraGetPacketRssi();
 
-	void sleep();
-	void idle();
+void loraExplicitHeaderMode();
+void loraImplicitHeaderMode();
 
-	void setFrequency(long frequency);
-	void setSpreadingFactor(int sf);
-	void setSignalBandwidth(long sbw);
+void loraSetOCP(uint8_t mA);
+void loraSetTxPower(int8_t power, int8_t outputPin);
+void loraSetCRC( bool crc );
+void loraSetSyncWord(int sw);
 
-	void initializeSPI( int mosi, int miso, int clk, int cs );
-	void initializeReset( int reset );
-	void initializeDIO( int dio );
-	void initialize( int power );
+void loraSleep();
+void loraIdle();
 
-	void setDataReceived( bool r )	{ _dataReceived = r; }
-	bool getDataReceived()	{ return _dataReceived; }
+void loraSetFrequency(long frequency);
+void loraSetSpreadingFactor(int sf);
+void loraSetSignalBandwidth(long sbw);
 
- protected:
-	void writeRegister( uint8_t reg, uint8_t data );
-	uint8_t readRegister( uint8_t reg );
+void loraSetDataReceived( bool r );
+bool loraGetDataReceived();	
 
- private:
-	void delay( int delay );
-
-	spi_device_handle_t 	_spi;
-	int 					_packetIndex = 0;
-	int 					_implicitHeaderMode = 0;
-	bool					_dataReceived = false;
-	long					_frequency;
-
-
-
-};
 
 #endif

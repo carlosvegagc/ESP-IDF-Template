@@ -2,13 +2,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include "esp_log.h"
 #include "driver/i2c.h"
 #include "sdkconfig.h"
-#include "font.h"
+
 
 #ifndef OLED_h
 #define OLED_h
+
+#include "font.h"
 
 #define OLED_ADDRESS 0x3C
 
@@ -74,45 +75,19 @@ enum OLEDDISPLAY_COLOR
 	INVERSE = 2
 };
 
-class OLED
-{
- public:
-	OLED( int width, int height, int sda, int scl, int reset );
-    
-	void drawString(int16_t xMove, int16_t yMove, const char *stringUser, OLEDDISPLAY_COLOR color );
-	uint16_t getStringWidth(const char* text, uint16_t length);
-	void setFont( const uint8_t* f ) { fontData = f; }
-	void setPixelColor(int16_t x, int16_t y, OLEDDISPLAY_COLOR color);
 
-	void clear();
-	void sendDataBack();
-	void sendData();
+void initOLED( int width, int height, int sda, int scl, int reset );
+
+void drawString(int16_t xMove, int16_t yMove, const char *stringUser, u_int8_t color );
+uint16_t getStringWidth(const char* text, uint16_t length);
+void setFont( const uint8_t* f );
+void setPixelColor(int16_t x, int16_t y, u_int8_t color);
+
+void clear();
+void sendDataBack();
+void sendData();
 
 
- protected:
-	void drawStringInternal(int16_t xMove, int16_t yMove, char* text, uint16_t textLength, uint16_t textWidth, OLEDDISPLAY_COLOR color);
-	void drawInternal(int16_t xMove, int16_t yMove, int16_t width, int16_t height, const uint8_t *data, uint16_t offset, uint16_t bytesInData, OLEDDISPLAY_COLOR color);
 
- private:
-	void initializeReset( int reset );
-	esp_err_t initializeI2C( int sda, int scl );
-	void initialize();
-
-	int writeRegister( uint8_t addr, uint8_t reg, uint8_t value);
-	int writeData( uint8_t addr, uint8_t* buf, int len );
-
-	void sendCommand( uint8_t command );
-
-	uint8_t *_buffer;
-	uint8_t *_buffer_back;
-
-	const uint8_t* fontData = ArialMT_Plain_16;
-
-	int _displayWidth;
-	int _displayHeight;
-	int _displayBufferSize;
-
-
-};
 
 #endif

@@ -12,7 +12,33 @@ static const char *TAG = "OLED";
 
 #define MODULE_NAME "LORA_MOD"
 
-OLED::OLED( int width, int height, int sda, int scl, int reset )
+// Functions Definition
+
+void drawStringInternal(int16_t xMove, int16_t yMove, char* text, uint16_t textLength, uint16_t textWidth, u_int8_t color);
+void drawInternal(int16_t xMove, int16_t yMove, int16_t width, int16_t height, const uint8_t *data, uint16_t offset, uint16_t bytesInData, u_int8_t color);
+
+void initializeReset( int reset );
+esp_err_t initializeI2C( int sda, int scl );
+
+static void initialize();
+static int writeRegister( uint8_t addr, uint8_t reg, uint8_t value);
+static int writeData( uint8_t addr, uint8_t* buf, int len );
+
+void sendCommand( uint8_t command );
+
+// Global variable definition
+
+uint8_t *_buffer;
+uint8_t *_buffer_back;
+
+const uint8_t* fontData = ArialMT_Plain_16;
+
+int _displayWidth;
+int _displayHeight;
+int _displayBufferSize;
+
+
+void initOLED( int width, int height, int sda, int scl, int reset )
 {
 	_displayWidth = width;
 	_displayHeight = height;
@@ -25,19 +51,14 @@ OLED::OLED( int width, int height, int sda, int scl, int reset )
 
 	initializeReset( reset );
 
-  ESP_LOGI(MODULE_NAME, "Reset SCREEN");
-
 	initializeI2C( sda, scl );
-
-  ESP_LOGI(MODULE_NAME, "I2C Started");
 
 	initialize();
 
-  ESP_LOGI(MODULE_NAME, "DISPLAY Ready");
 
 }
 
-esp_err_t OLED::initializeI2C( int sda, int scl )
+esp_err_t initializeI2C( int sda, int scl )
 {
     int i2c_master_port = I2C_MASTER_NUM;
     i2c_config_t conf;
@@ -51,7 +72,7 @@ esp_err_t OLED::initializeI2C( int sda, int scl )
     return i2c_driver_install(i2c_master_port, conf.mode, 0, 0, 0);
 }
 
-void OLED::initializeReset( int reset )
+void initializeReset( int reset )
 {
 	gpio_num_t r = (gpio_num_t) reset;
 
@@ -78,7 +99,7 @@ void OLED::initializeReset( int reset )
 }
 
 
-void OLED::initialize()
+static void initialize()
 {
 	sendCommand(DISPLAYOFF);
 	sendCommand(SETDISPLAYCLOCKDIV);
@@ -115,7 +136,7 @@ void OLED::initialize()
 
 }
 
-int OLED::writeData( uint8_t addr, uint8_t* buf, int len )
+static int writeData( uint8_t addr, uint8_t* buf, int len )
 {
     uint8_t buffer = 0x40;
 
@@ -143,7 +164,7 @@ int OLED::writeData( uint8_t addr, uint8_t* buf, int len )
     return 0;
 }
 
-int OLED::writeRegister( uint8_t addr, uint8_t reg, uint8_t value)
+static int writeRegister( uint8_t addr, uint8_t reg, uint8_t value)
 {
     uint8_t buffer[3];
 
@@ -170,13 +191,16 @@ int OLED::writeRegister( uint8_t addr, uint8_t reg, uint8_t value)
     return 0;
 }
 
+void setFont( const uint8_t* f ) { 
+  fontData = f; 
+}
 
-void OLED::sendCommand( uint8_t command )
+void sendCommand( uint8_t command )
 {
 	writeRegister( OLED_ADDRESS, 0x00, command );
 }
 
-void OLED::sendDataBack()
+void sendDataBack()
 {
 
 	uint8_t minBoundY = UINT8_MAX;
@@ -248,7 +272,7 @@ void OLED::sendDataBack()
 
 
 
-void OLED::sendData()
+void sendData()
 {
 	sendCommand(COLUMNADDR);
 	sendCommand(0);
@@ -269,12 +293,12 @@ void OLED::sendData()
 
 }
 
-void OLED::clear()
+void clear()
 {
 	memset(_buffer, 0, _displayBufferSize);
 }
 
-void OLED::setPixelColor(int16_t x, int16_t y, OLEDDISPLAY_COLOR color)
+void setPixelColor(int16_t x, int16_t y, u_int8_t color)
 {
 	switch (color)
 	{
@@ -284,7 +308,7 @@ void OLED::setPixelColor(int16_t x, int16_t y, OLEDDISPLAY_COLOR color)
     }
 }
 
-void OLED::drawInternal(int16_t xMove, int16_t yMove, int16_t width, int16_t height, const uint8_t *data, uint16_t offset, uint16_t bytesInData, OLEDDISPLAY_COLOR color)
+void drawInternal(int16_t xMove, int16_t yMove, int16_t width, int16_t height, const uint8_t *data, uint16_t offset, uint16_t bytesInData, u_int8_t color)
 {
   if (width < 0 || height < 0) return;
   if (yMove + height < 0 || yMove > _displayHeight)  return;
@@ -352,7 +376,7 @@ void OLED::drawInternal(int16_t xMove, int16_t yMove, int16_t width, int16_t hei
 }
 
 
-void OLED::drawStringInternal(int16_t xMove, int16_t yMove, char* text, uint16_t textLength, uint16_t textWidth, OLEDDISPLAY_COLOR color)
+void drawStringInternal(int16_t xMove, int16_t yMove, char* text, uint16_t textLength, uint16_t textWidth, u_int8_t color)
 {
   uint8_t textHeight       = *(fontData + HEIGHT_POS);
   uint8_t firstChar        = *(fontData + FIRST_CHAR_POS);
@@ -391,7 +415,7 @@ void OLED::drawStringInternal(int16_t xMove, int16_t yMove, char* text, uint16_t
   }
 }
 
-uint16_t OLED::getStringWidth(const char* text, uint16_t length)
+uint16_t getStringWidth(const char* text, uint16_t length)
 {
   uint16_t firstChar        = *(fontData + FIRST_CHAR_POS);
 
@@ -409,7 +433,7 @@ uint16_t OLED::getStringWidth(const char* text, uint16_t length)
   return fmax(maxWidth, stringWidth);
 }
 
-void OLED::drawString(int16_t xMove, int16_t yMove, const char *stringUser, OLEDDISPLAY_COLOR color )
+void drawString(int16_t xMove, int16_t yMove, const char *stringUser, u_int8_t color )
 {
 	uint16_t lineHeight = *(fontData + HEIGHT_POS);
 
