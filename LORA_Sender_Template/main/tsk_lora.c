@@ -36,9 +36,10 @@ void lora_sender_task(void *pvParameters)
 
     // Inits the Lora module
     loraInit( PIN_NUM_MOSI, PIN_NUM_MISO, PIN_NUM_CLK, PIN_NUM_CS, RESET_PIN, PIN_NUM_DIO, 10 );
-
+    
+    // Task Loop
     for (;;) {
-        //Waiting for UART event.
+        //Waiting to receive an incoming message.
         if (xQueueReceive(lora_sender_queue, (void * )&in_message, (portTickType)portMAX_DELAY)) {
 
             writeMessage(in_message);

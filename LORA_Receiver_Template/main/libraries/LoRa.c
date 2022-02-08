@@ -431,7 +431,7 @@ static void initialize( int power )
 
     uint8_t version = loraReadRegister(REG_VERSION);
     printf( "Version: [%d]\n", version );
-    loraSetFrequency( 915E6 );
+    loraSetFrequency( 433E6 );
 
     writeRegister(REG_FIFO_TX_BASE_ADDR, 0);
     writeRegister(REG_FIFO_RX_BASE_ADDR, 0);
