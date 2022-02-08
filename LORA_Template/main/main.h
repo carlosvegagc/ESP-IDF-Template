@@ -1,3 +1,5 @@
+
+
 #ifndef MAIN_H
 
 #define MAIN_H
@@ -9,5 +11,6 @@
 
 /**** Global Variables ****/
 xQueueHandle task1_queue;
+xQueueHandle display_queue;
 
 #endif

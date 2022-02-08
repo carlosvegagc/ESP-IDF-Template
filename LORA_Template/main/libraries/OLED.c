@@ -6,8 +6,9 @@
 #include <stdio.h>
 #include "OLED.h"
 #include "driver/gpio.h"
+#include "font.h"
 
-static const char *TAG = "OLED";
+//static const char *TAG = "OLED";
 #define ESP_INTR_FLAG_DEFAULT 0
 
 #define MODULE_NAME "LORA_MOD"

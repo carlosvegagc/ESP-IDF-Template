@@ -12,17 +12,16 @@
 // Project Includes
 #include "main.h"
 #include "config.h"
-#include "OLED.h"
 #include "tsk_lora.h"
-#include "font.h"
+#include "tsk_display.h"
 
 #define APP_NAME "DEMO_APP"
 
 //FREE RTOS DEFINITIONS
 xQueueHandle lora_sender_queue = NULL;
+xQueueHandle display_queue = NULL;
 
 int _counter = 0;
-uint8_t _color = WHITE;
 
 void delay( int msec )
 {
@@ -61,35 +60,41 @@ bool getConfigPin()
 void main_task( void* param )
 {
 
-	//OLED Init
-	initOLED( 128, 64, 21, 22, 16 );
-	setFont(ArialMT_Plain_16 );
-	clear();
-	sendData();
-
-	//OLED Send message screeen
-	clear();
-	drawString(0, 12, "Starting...", _color );
-	sendDataBack();
-
-	bool _write = getConfigPin();
-
+	// Config Flash Pin
 	gpio_num_t fp = (gpio_num_t) FLASH_PIN;
 	gpio_pad_select_gpio( fp );
 	gpio_set_direction( fp , GPIO_MODE_OUTPUT);
 
+	//Asign the memory for the message in the heap
+	char * message = (char *)malloc(LEN_MESSAGES_LORA);
+	if(message == NULL){
+		ESP_LOGE(APP_NAME, "%s malloc.1 failed\n", __func__);
+	}
+
 	for ( ;; )
 	{
 		BaseType_t status;
-		char message[LEN_MESSAGES_LORA] = "Hello world";
 
-		//Send the lora message
-		status = xQueueSend(task1_queue, message ,10/portTICK_PERIOD_MS);
-
+		// Update the message
+		sprintf( message, "Package: [%d]", _counter);	
+		
+		// SEND MESSAGE TO LORA SENDER TASK
+		//Send the pointer to the message (Reduces memmory use by the queue)
+		status = xQueueSend(lora_sender_queue, (void * ) &message, 10/portTICK_PERIOD_MS);
+		// Check the the message has been correctly send into the queue
 		if(status == pdPASS){
-			ESP_LOGI(APP_NAME, "Message send correctly \n");
+			ESP_LOGI(APP_NAME, "Message send correctly");
 		}else{
-			ESP_LOGI(APP_NAME, "ERROR SENDING MESSAGE \n");
+			ESP_LOGI(APP_NAME, "ERROR SENDING MESSAGE");
+		}
+
+		// SEND MESSAGE TO THE DISPLAY
+		status = xQueueSend(display_queue, (void * ) &message, 10/portTICK_PERIOD_MS);
+		// Check the the message has been correctly send into the queue
+		if(status == pdPASS){
+			ESP_LOGI(APP_NAME, "Message send correctly");
+		}else{
+			ESP_LOGI(APP_NAME, "ERROR SENDING MESSAGE");
 		}
 
 		// Blink the led
@@ -98,31 +103,11 @@ void main_task( void* param )
 
 		gpio_set_level( fp, 0);
 		delay(1000);
-	
 
-		// if ( !_write && lora.getDataReceived() )
-		// {
-		// 	for ( int i = 0 ; i < 3 ; i++)
-		// 	{
-		// 		gpio_set_level( fp, 1);
-		// 		delay(50);
-		// 		gpio_set_level( fp, 0);
-		// 		delay(50);
-		// 	}
+		// Update counter
+		_counter++;
 
-		// 	char buf[200];
-		// 	char msg[100];
-
-		// 	int packetSize = lora.handleDataReceived( msg );
-		// 	lora.setDataReceived( false );
-
-		// 	sprintf( buf, "<%10s>\n(%d) RSSI: %d", msg, packetSize, lora.getPacketRssi() );
-
-		// 	_oled->clear();
-		// 	_oled->drawString(0, 12, buf, _color );
-		// 	_oled->sendDataBack();
-		// }
-
+		// Task delay
 		vTaskDelay(50 / portTICK_PERIOD_MS);
 
 	}
@@ -140,23 +125,26 @@ void app_main()
 	/*** Init the FREERTOS queques ***/
 	
 	// Create the queque for sending Lora Messages
-    lora_sender_queue = xQueueCreate(5, LEN_MESSAGES_LORA);
-
-    if( lora_sender_queue == NULL )
-    {
+    lora_sender_queue = xQueueCreate(5, sizeof(char *));
+    if( lora_sender_queue == NULL ) 
         // There was not enough heap memory space available to create the message buffer. 
         ESP_LOGE(APP_NAME, "Not enough memory to create the lora_sender_queue\n");
-    }
+
+
+	// Create the queque for sending the messages to display
+    display_queue = xQueueCreate(5, sizeof(char *));
+    if( display_queue == NULL )
+        // There was not enough heap memory space available to create the message buffer. 
+        ESP_LOGE(APP_NAME, "Not enough memory to create the display_queue\n");
 
 
 
+	/*** Init the system tasks ***/
 
-	// Had to set the task size to 10k otherwise I would get various instabilities
-	// Around 2k or less I would get the stack overflow warning but at 2048 it would
-	// just crash in various random ways
+	xTaskCreate(main_task, "main_task", 10000, NULL, 10, NULL);
 
-	xTaskCreate(main_task, "main_task", 10000, NULL, 1, NULL);
+	xTaskCreate(lora_sender_task, "lora_sender_task", 2000, NULL, 5, NULL);
 
-	xTaskCreate(lora_sender_task, "lora_sender_task", 10000, NULL, 1, NULL);
+	xTaskCreate(display_task, "display_task", 2000, NULL, 1, NULL);
 }
 

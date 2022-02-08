@@ -1,11 +1,8 @@
 #ifndef CONFIG
 
 #define CONFIG
-#include "freertos/FreeRTOS.h"
 
 /*** Board Configuration ***/
-
-
 #define PIN_NUM_MISO 	19
 #define PIN_NUM_MOSI 	27
 #define PIN_NUM_CLK  	5
@@ -18,5 +15,6 @@
 
 /*** System Config ***/
 #define LEN_MESSAGES_LORA 20 
+#define LEN_MESSAGES_DISP 20 
 
 #endif

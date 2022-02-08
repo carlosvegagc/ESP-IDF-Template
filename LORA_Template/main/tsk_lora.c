@@ -7,7 +7,7 @@
 #include "driver/uart.h"
 #include "string.h"
 
-#include "LoRa.h"
+#include "libraries/LoRa.h"
 #include "config.h"
 #include "main.h"
 
@@ -18,7 +18,7 @@ extern xQueueHandle lora_sender_queue;
 void writeMessage( char * message)
 {
 
-    ESP_LOGI(MODULE_NAME, "Sending message Lora");
+    ESP_LOGI(MODULE_NAME, "Sending message Lora: %s", message);
 
 	loraBeginPacket(false);
 
@@ -32,7 +32,7 @@ void writeMessage( char * message)
 void lora_sender_task(void *pvParameters)
 {
 
-    char in_message [LEN_MESSAGES_LORA];
+    char * in_message ;
 
     // Inits the Lora module
     loraInit( PIN_NUM_MOSI, PIN_NUM_MISO, PIN_NUM_CLK, PIN_NUM_CS, RESET_PIN, PIN_NUM_DIO, 10 );
@@ -44,6 +44,9 @@ void lora_sender_task(void *pvParameters)
             writeMessage(in_message);
 
         }
+
+        // Task delay
+		vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 
     vTaskDelete(NULL);

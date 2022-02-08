@@ -5,7 +5,6 @@
 #include "driver/i2c.h"
 #include "sdkconfig.h"
 
-
 #ifndef OLED_h
 #define OLED_h
 
@@ -38,7 +37,6 @@
 #define HEIGHT_POS 1
 #define FIRST_CHAR_POS 2
 #define CHAR_NUM_POS 3
-
 
 // Display commands
 #define CHARGEPUMP 0x8D
@@ -75,7 +73,6 @@ enum OLEDDISPLAY_COLOR
 	INVERSE = 2
 };
 
-
 void initOLED( int width, int height, int sda, int scl, int reset );
 
 void drawString(int16_t xMove, int16_t yMove, const char *stringUser, u_int8_t color );
@@ -86,8 +83,6 @@ void setPixelColor(int16_t x, int16_t y, u_int8_t color);
 void clear();
 void sendDataBack();
 void sendData();
-
-
 
 
 #endif
