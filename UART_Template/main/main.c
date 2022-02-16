@@ -84,6 +84,20 @@ void main_task(void *param)
 				break;
 			}
 
+			case 'L':
+			{	
+				// TODO 1: Read the color of the led.
+				int R, G, B;
+
+				R = atoi(command.params[1]);
+
+				// TODO 2: Send the color to the led.
+				
+
+
+				break;
+			}
+
 			default:
 			{
 				printf("%c:Unknown\n", command.command);
